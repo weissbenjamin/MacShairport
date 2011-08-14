@@ -21,14 +21,28 @@ static NSString * const MacShairportAppDelegateDefaultPassword = nil;
 #pragma mark NSApplicationDelegate
 
 - (void)applicationDidFinishLaunching:(NSNotification *)notification {
-	NSString *computerName = NSMakeCollectable(SCDynamicStoreCopyComputerName(NULL, NULL));
-	self.server = [MSShairportServer serverWithName:computerName password:MacShairportAppDelegateDefaultPassword];
-	self.server.delegate = self;
+    NSDictionary *preferences = [NSDictionary dictionaryWithObjectsAndKeys:
+                                 @"", @"ShairingName"
+                                 , nil];
+    
+    [[NSUserDefaults standardUserDefaults] registerDefaults:preferences];
+    
+    NSString *shairingName;
+    
+    if ([[[NSUserDefaults standardUserDefaults] objectForKey:@"ShairingName"] isEqualToString:@""]) {
+        shairingName = NSMakeCollectable(SCDynamicStoreCopyComputerName(NULL, NULL));
+    } else {
+        shairingName = [[NSUserDefaults standardUserDefaults] objectForKey:@"ShairingName"];
+    }
+    
+    self.server = [MSShairportServer serverWithName:shairingName password:MacShairportAppDelegateDefaultPassword];
+	self.server.delegate = self; 
 	
 	NSError *error = nil;
 	BOOL success = [self.server start:&error];
-	if(!success) {
-		[NSApp presentError:error];
+    if(!success) {
+        [NSApp presentError:error];
+        [NSApp terminate:nil];    
 	}
 }
 
